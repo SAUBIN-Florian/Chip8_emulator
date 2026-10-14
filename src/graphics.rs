@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use wgpu::{Instance, Surface, Device, Queue, SurfaceConfiguration};
+use winit::window::Window;
 
 pub struct GraphicsState {
     // src: https://sotrh.github.io/learn-wgpu/beginner/tutorial2-surface/
@@ -6,11 +9,13 @@ pub struct GraphicsState {
     device: Device,
     queue: Queue,
     config: SurfaceConfiguration,
-    is_configured: bool
+    is_configured: bool,
 }
 
 impl GraphicsState {
-    pub fn new() -> Self {
+    pub async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
+        let size = window.inner_size();
+
         let instance = Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
             flags: Default::default(),
@@ -19,8 +24,7 @@ impl GraphicsState {
             display: None
         });
 
-        // TODO: find a way to pass the Window instance without circular dependancy
-        let surface = instance.create_surface(...);
+        let surface = instance.create_surface(window.clone()).unwrap();
 
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
@@ -29,7 +33,7 @@ impl GraphicsState {
             apply_limit_buckets: true
         }).await?;
 
-        let (device, queue) = adapter.request_device(wgpu::DeviceDescriptor {
+        let (device, queue) = adapter.request_device(&wgpu::DeviceDescriptor {
             label: None,
             required_features: wgpu::Features::default(),
             experimental_features: wgpu::ExperimentalFeatures::disabled(),
@@ -41,15 +45,9 @@ impl GraphicsState {
         let surface_caps = surface.get_capabilities(&adapter);
 
         let surface_format = surface_caps.formats.iter()
-            .find(|f| i.is_srgb())
+            .find(|f| f.is_srgb())
             .copied()
             .unwrap_or(surface_caps.formats[0]);
         
-    }
-}
-
-impl Default for GraphicsState {
-    fn default() -> Self {
-        Self::new()
     }
 }
