@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
 mod chip8;
+mod graphics;
 
 use chip8::Chip8;
 use winit::dpi::LogicalSize;
@@ -39,6 +40,7 @@ impl ApplicationHandler for App {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             },
+            // TODO: implement an keyboard input handler
             WindowEvent::RedrawRequested => {
                 // Drawing goes brrrr
                 // TODO: implement primitive with wgpu for renderering a buffer of pixels
@@ -48,7 +50,7 @@ impl ApplicationHandler for App {
             },
             _ => ()
         }
-    }
+    } 
 }
 
 fn main() {
