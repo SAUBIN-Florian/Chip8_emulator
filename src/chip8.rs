@@ -65,8 +65,8 @@ impl Chip8 {
             0x3000 => op_3xnn(&self.opcode, &mut self.v, &mut self.pc),
             0x4000 => op_4xnn(&self.opcode, &mut self.v, &mut self.pc),
             0x5000 => op_5xy0(&self.opcode, &mut self.v, &mut self.pc),
-            0x6000 => op_6xnn(&self.opcode, &mut self.v),
-            0x7000 => op_7xnn(&self.opcode, &mut self.v),
+            0x6000 => op_6xnn(&self.opcode, &mut self.v, &mut self.pc),
+            0x7000 => op_7xnn(&self.opcode, &mut self.v, &mut self.pc),
             0x8000 => {
                 match self.opcode & 0x000F {
                     0x0000 => op_8xy0(&self.opcode, &mut self.v, &mut self.pc),
@@ -151,7 +151,7 @@ fn op_2nnn(opcode: &u16, stack: &mut [u16; 16], pc: &mut u16, sp: &mut u8) {
 }
 
 fn op_3xnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
-    let idx0 = opcode & 0x0F00 >> 8;
+    let idx0 = (opcode & 0x0F00) >> 8;
     let idx1 = opcode & 0x00FF;
 
     if v[idx0 as usize] == idx1 as u8 {
@@ -162,7 +162,7 @@ fn op_3xnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
 }
 
 fn op_4xnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
-    let idx0 = opcode & 0x0F00 >> 8;
+    let idx0 = (opcode & 0x0F00) >> 8;
     let idx1 = opcode & 0x00FF;
 
     if v[idx0 as usize] != idx1 as u8 {
@@ -173,8 +173,8 @@ fn op_4xnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
 }
 
 fn op_5xy0(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
-    let idx0 = opcode & 0x0F00 >> 8;
-    let idx1 = opcode & 0x00F0 >> 4;
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
 
     if v[idx0 as usize] == v[idx1 as usize] {
         *pc += 4;
@@ -183,46 +183,126 @@ fn op_5xy0(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
     }
 }
 
-fn op_6xnn(opcode: &u16, v: &mut [u8; 16]) {
-    
+fn op_6xnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx = (opcode & 0x0F00) >> 8;
+    v[idx as usize] = (opcode & 0x00FF) as u8;
+    *pc += 2;
 }
 
-fn op_7xnn(opcode: &u16, v: &mut [u8; 16]) {}
+fn op_7xnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx = (opcode & 0x0F00) >> 8;
+    v[idx as usize] += (opcode & 0x00FF) as u8;
+    *pc += 2;
+}
 
-fn op_8xy0(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_8xy0(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
+    v[idx0 as usize] = v[idx1 as usize];
+    *pc += 2;
+}
 
-fn op_8xy1(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_8xy1(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
+    v[idx0 as usize] |= v[idx1 as usize];
+    *pc += 2;
+}
 
-fn op_8xy2(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_8xy2(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
+    v[idx0 as usize] &= v[idx1 as usize];
+    *pc += 2;
+}
 
-fn op_8xy3(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_8xy3(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
+    v[idx0 as usize] ^= v[idx1 as usize];
+    *pc += 2;
+}
 
 fn op_8xy4(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
-    let idx0 = opcode & 0x00F0 >> 4;
-    let idx1 = opcode & 0x0F00 >> 8;
+    let idx0 = (opcode & 0x00F0) >> 4;
+    let idx1 = (opcode & 0x0F00) >> 8;
 
     if v[idx0 as usize] > v[idx1 as usize] {
-        todo!();
+        v[0xF] = 1;
     } else {
-        todo!();
+        v[0xF] = 0;
+    }
+
+    v[idx1 as usize] += v[idx0 as usize];
+    *pc += 2;
+}
+
+fn op_8xy5(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x00F0) >> 4;
+    let idx1 = (opcode & 0x0F00) >> 8;
+
+    if v[idx0 as usize] > v[idx1 as usize] {
+        v[0xF] = 0;
+    } else {
+        v[0xF] = 1;
+    }
+
+    v[idx1 as usize] -= v[idx0 as usize];
+    *pc += 2;
+}
+
+fn op_8xy6(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx = (opcode & 0x0F00) >> 8;
+    v[0xF] = v[idx as usize] & 0x1;
+    v[idx as usize] >>= 1;
+    *pc += 2;
+}
+
+fn op_8xy7(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
+   
+    if v[idx0 as usize] > v[idx1 as usize] {
+        v[0xF] = 0;
+    } else {
+        v[0xF] = 1;
+    }
+
+    v[idx0 as usize] = v[idx1 as usize] - v[idx0 as usize];
+    *pc += 2;
+}
+
+fn op_8xye(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx = (opcode & 0x0F00) >> 8;
+    v[0xF] = v[idx as usize] >> 7;
+    v[idx as usize] <<= 1;
+    *pc += 2;
+}
+
+fn op_9xy0(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx0 = (opcode & 0x0F00) >> 8;
+    let idx1 = (opcode & 0x00F0) >> 4;
+    
+    if v[idx0 as usize] != v[idx1 as usize] {
+        *pc += 4;
+    } else {
+        *pc += 2;
     }
 }
 
-fn op_8xy5(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_annn(opcode: &u16, i: &mut u16, pc: &mut u16) {
+    *i = opcode & 0x0FFF;
+    *pc += 2;
+}
 
-fn op_8xy6(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_bnnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    *pc = (opcode & 0x0FFF) + v[0] as u16;
+}
 
-fn op_8xy7(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
-
-fn op_8xye(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
-
-fn op_9xy0(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
-
-fn op_annn(opcode: &u16, i: &mut u16, pc: &mut u16) {}
-
-fn op_bnnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
-
-fn op_cxnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {}
+fn op_cxnn(opcode: &u16, v: &mut [u8; 16], pc: &mut u16) {
+    let idx = (opcode & 0x0F00) >> 8;
+    todo!("implement rng with the rand lib...");
+}
 
 fn op_dxyn(opcode: &u16, gfx: &mut [u8; 64*32], memory: &mut [u8; 4096], v: &mut [u8; 16], pc: &mut u16, i: &mut u16, flag: &mut bool) {}
 
