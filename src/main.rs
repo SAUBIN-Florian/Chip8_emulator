@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
 mod chip8;
-mod graphics;
+//mod graphics;
 
 use std::sync::Arc;
 
@@ -12,14 +12,14 @@ use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 
 use chip8::Chip8;
-use graphics::GraphicsState;
+//use graphics::GraphicsState;
 
 const WIDTH: u32 = 512;
 const HEIGHT: u32 = 256;
 
 struct App {
     window: Arc<Window>,
-    g_state: GraphicsState,
+    //g_state: GraphicsState,
     chip8: Chip8
 }
 
@@ -60,6 +60,6 @@ fn main() {
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
     
-    let mut app: App;
-    let _ = event_loop.run_app(&mut app);
+    //let mut app: App;
+    //let _ = event_loop.run_app(&mut app);
 }
