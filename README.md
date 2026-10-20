@@ -1,5 +1,7 @@
 # Chip8 Emulator in Rust
 
+** Unfinished software **
+
 ![Emulator example](./preface.png)
 
 This project was created in the goal of exploring how emulator works and how to simulate a full fledge CPU.
